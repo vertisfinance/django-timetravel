@@ -1,0 +1,11 @@
+containers:
+    postgres:
+        image: vertisfinance/postgres
+        cmd: start
+        icmd: shell
+        ports:
+            15432: 5432
+
+groups:
+    dev:
+        - postgres
