@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db.models import signals, Model, ForeignKey, OneToOneField
 from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
+from .queryset import patch_queryset
 
 
 seen_models = set()
@@ -16,6 +17,7 @@ FORBIDDEN_FIELDS = {'pk': 'tt_id',
                     'du': 'tt_delete_user_id',
                     'vf': 'tt_valid_from_ts',
                     'vu': 'tt_until_from_ts'}
+MAX = 999999999999
 
 
 def get_migration_app():
@@ -29,6 +31,8 @@ def get_migration_app():
 
 
 def process_models(sender, **kwargs):
+    do_patch()
+
     all_models = apps.all_models
     for app_label in all_models:
         if app_label not in installed_app_labels:
@@ -37,15 +41,28 @@ def process_models(sender, **kwargs):
         for model_name in app_models:
             entry = '%s.%s' % (app_label, model_name)
             model = app_models[model_name]
+
             if entry not in seen_models and all_relations_ready(model):
                 seen_models.add(entry)
                 create_timetravel_model(model)
 
+    app_label = sender._meta.app_label
+    model_name = sender._meta.model_name
+    entry = '%s.%s' % (app_label, model_name)
+
+    if app_label in installed_app_labels:
+        if entry not in seen_models and all_relations_ready(sender):
+            seen_models.add(entry)
+            create_timetravel_model(sender)
+
 
 def all_relations_ready(model):
     for field in model._meta.local_fields:
-        if field.rel and not hasattr(field.rel.to, '_meta'):
-            return False
+        if field.rel:
+            if not hasattr(field.rel.to, '_meta'):
+                return False
+            if not field.rel.to._meta.pk:
+                return False
     try:
         get_user_model()
     except LookupError:
@@ -58,7 +75,7 @@ def create_timetravel_model(for_model):
     Returns the newly created timetravel model class for the
     model given.
     """
-    if any([hasattr(for_model, '_is_timetravel_model'),
+    if any([hasattr(for_model, '_tt_is_timetravel_model'),
             for_model.__module__ == '__fake__']):
         return
 
@@ -70,12 +87,16 @@ def create_timetravel_model(for_model):
         db_table = name
 
     attrs = {'Meta': Meta,
-             '_is_timetravel_model': True,
+             '_tt_is_timetravel_model': True,
              '__module__': for_model.__module__}
 
     fields = copy_fields(for_model)
     attrs.update(fields)
-    return type(str(name), (Model,), attrs)
+
+    for_model._tt_has_history = True
+    ret = type(str(name), (Model,), attrs)
+    for_model._tt_model = ret
+    return ret
 
 
 def auto_to_integer(field):
@@ -122,7 +143,7 @@ def copy_fields(model):
     DU = FORBIDDEN_FIELDS.get('du')
     VF = FORBIDDEN_FIELDS.get('vf')
     VU = FORBIDDEN_FIELDS.get('vu')
-    MAX = 999999999999
+
     fields = {
         PK: AutoField(verbose_name='TT_ID',
                       primary_key=True,
@@ -174,5 +195,8 @@ def copy_fields(model):
     return fields
 
 
-signals.class_prepared.connect(process_models,
-                               dispatch_uid='any')
+def do_patch():
+    patch_queryset()
+
+
+signals.class_prepared.connect(process_models, dispatch_uid='any')
