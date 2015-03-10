@@ -8,6 +8,5 @@ py==1.4.26
 pytest==2.6.4
 pytest-cov==1.8.1
 pytest-django==2.8.0
-pytest-pythonpath==0.6
 -e .
 -e git+https://github.com/vertisfinance/dockman.git#egg=dockman-master
