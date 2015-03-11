@@ -7,17 +7,12 @@ from django.db.models import signals, Model, ForeignKey, OneToOneField
 from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .queryset import patch_queryset
+from . import FORBIDDEN_FIELDS, MAX
 
 
 seen_models = set()
 installed_app_labels = [AppConfig.create(entry).label
                         for entry in settings.INSTALLED_APPS]
-FORBIDDEN_FIELDS = {'pk': 'tt_id',
-                    'cu': 'tt_create_modif_user_id',
-                    'du': 'tt_delete_user_id',
-                    'vf': 'tt_valid_from_ts',
-                    'vu': 'tt_until_from_ts'}
-MAX = 999999999999
 
 
 def get_migration_app():
@@ -176,7 +171,10 @@ def copy_fields(model):
             _field = auto_to_integer(field)
 
         if _field.name == 'id':
+            _field._tt_copy_attrname = 'id'
             _field.name = 'tt_orig_id'
+        else:
+            _field._tt_copy_attrname = field.name
 
         if not isinstance(_field, BooleanField):
             _field.null = True
@@ -190,6 +188,8 @@ def copy_fields(model):
         if field.primary_key:
             _field.db_index = True
             _field.null = False
+
+        _field.auto_created = False
 
         fields[_field.name] = _field
     return fields
