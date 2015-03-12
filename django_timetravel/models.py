@@ -14,6 +14,13 @@ seen_models = set()
 installed_app_labels = [AppConfig.create(entry).label
                         for entry in settings.INSTALLED_APPS]
 
+PK = FORBIDDEN_FIELDS.get('pk')
+OK = FORBIDDEN_FIELDS.get('ok')
+CU = FORBIDDEN_FIELDS.get('cu')
+DU = FORBIDDEN_FIELDS.get('du')
+VF = FORBIDDEN_FIELDS.get('vf')
+VU = FORBIDDEN_FIELDS.get('vu')
+
 
 def get_migration_app():
     """
@@ -80,6 +87,7 @@ def create_timetravel_model(for_model):
     class Meta:
         app_label = get_migration_app()
         db_table = name
+        index_together = [[OK, VU]]
 
     attrs = {'Meta': Meta,
              '_tt_is_timetravel_model': True,
@@ -101,6 +109,13 @@ def auto_to_integer(field):
     _field.verbose_name = field.verbose_name
     _field.db_column = field.db_column
     _field.db_tablespace = field.db_tablespace
+    _field.primary_key = field.primary_key
+    _field.serialize = field.serialize
+    _field.null = field.null
+    _field._unique = field._unique
+    _field.unique_for_date = field.unique_for_date
+    _field.unique_for_month = field.unique_for_month
+    _field.unique_for_year = field.unique_for_year
 
     return _field
 
@@ -133,14 +148,8 @@ def copy_fields(model):
     Creates copies of the model's original fields, returning
     a dictionary mapping field name to copied field object.
     """
-    PK = FORBIDDEN_FIELDS.get('pk')
-    CU = FORBIDDEN_FIELDS.get('cu')
-    DU = FORBIDDEN_FIELDS.get('du')
-    VF = FORBIDDEN_FIELDS.get('vf')
-    VU = FORBIDDEN_FIELDS.get('vu')
-
     fields = {
-        PK: AutoField(verbose_name='TT_ID',
+        PK: AutoField(verbose_name=PK,
                       primary_key=True,
                       auto_created=True),
         CU: create_user_field(CU),
@@ -163,35 +172,35 @@ def copy_fields(model):
         else:
             _field = copy.copy(field)
 
-        if _field.primary_key:
-            _field.primary_key = False
-            _field.serialize = True
-
         if isinstance(_field, AutoField):
             _field = auto_to_integer(field)
 
-        if _field.name == 'id':
-            _field._tt_copy_attrname = 'id'
-            _field.name = 'tt_orig_id'
-        else:
-            _field._tt_copy_attrname = field.name
+        _field._tt_field_attrname = field.attname
+        _field._tt_field_name = field.name
 
         if not isinstance(_field, BooleanField):
             _field.null = True
 
-        _field._unique = False
+        if _field.primary_key:
+            _field.primary_key = False
+            _field.serialize = True
+            _field.name = OK
+            _field.db_index = True
+            _field.null = False
 
+        _field._unique = False
         _field.unique_for_date = False if _field.unique_for_date else None
         _field.unique_for_month = False if _field.unique_for_month else None
         _field.unique_for_year = False if _field.unique_for_year else None
 
-        if field.primary_key:
-            _field.db_index = True
-            _field.null = False
-
         _field.auto_created = False
 
         fields[_field.name] = _field
+
+    # print model._meta.model_name
+    # for fn, f in fields.items():
+    #     print '    %s: %s' % (fn, f.__class__)
+
     return fields
 
 

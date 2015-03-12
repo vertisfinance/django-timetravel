@@ -14,9 +14,14 @@ from product.models import Product
 
 prod1 = Product(name='apple', price=3.141593)
 prod2 = Product(name='pear', price=2.718282)
-# prod.save()
-# prod.price = 2.718282
-# prod.save()
 Product.objects.bulk_create((prod1, prod2))
 
+prod1.price = 5
+prod1.save()
+prod1.price = 6
+prod1.save()
+
+
 print 'queries num: %s' % len(django.db.connection.queries)
+for q in django.db.connection.queries:
+    print q
