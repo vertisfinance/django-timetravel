@@ -124,7 +124,7 @@ update.alters_data = True
 def patch_queryset():
     if hasattr(QuerySet, '_tt_patched'):
         return
-    QuerySet._tt_patched = True
-    QuerySet._insert = _insert
-    QuerySet._update = _update
-    QuerySet.update = update
+    # QuerySet._tt_patched = True
+    # QuerySet._insert = _insert
+    # QuerySet._update = _update
+    # QuerySet.update = update
