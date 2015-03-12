@@ -1,62 +1,31 @@
 import time
 
 from django.db.models import QuerySet
-# from django.apps import apps
 
-from . import MAX, OK, CU, VF, VU
-
-
-def get_active_record(model, obj):
-    tt_model = model._tt_model
-    return tt_model.objects.get(**{OK: obj.pk, VU: MAX})
-
-
-def close_active_record(model, obj):
-    active = get_active_record(model, obj)
-    setattr(active, VU, time.time())
-    active.save()
-
-
-def insert_history_record(model, obj, pk=None):
-    tt_model = model._tt_model
-
-    args = {CU: None,  # TODO
-            VF: time.time()}
-
-    fields = tt_model._meta.fields
-    fields = [f for f in fields if hasattr(f, '_tt_field_attrname')]
-    for field in fields:
-        attr = getattr(obj, field._tt_field_attrname)
-        is_pk = model._meta.get_field(field._tt_field_name).primary_key
-        if is_pk and attr is None:
-            attr = attr if attr is not None else pk
-            assert attr is not None, 'No primary key'
-        args[field.name] = attr
-
-    model_instance = tt_model(**args)
-    model_instance.save()
+from . import (create_history_record,
+               close_active_records,
+               insert_history_records)
 
 
 ###
 old__insert = QuerySet._insert
 
 
-def _insert(self, objs, fields, return_id=False, raw=False, using=None):
+def _insert(self, objs, fields, return_id=False,
+            raw=False, using=None):
     if hasattr(self.model, '_tt_model'):
         # Must not allow multiple objs in _insert, or else we have no way to
         # retrieve the pk of newly inserted rows
-        if len(objs) > 1:
-            for obj in objs:
-                self._insert([obj], fields, return_id=True,
+        # TODO: Warning
+        history_objs = []
+        for obj in objs:
+            pk = old__insert(self, [obj], fields, return_id=True,
                              raw=raw, using=using)
-            return
-        else:
-            ret = old__insert(self, objs, fields, return_id=True,
-                              raw=raw, using=using)
-            obj = objs[0]
-            insert_history_record(self.model, obj, pk=ret)
-
-            return ret
+            ts = time.time()
+            ho = create_history_record(self.model, obj, ts, pk=pk)
+            history_objs.append(ho)
+        insert_history_records(self.model, history_objs)
+        return pk if len(objs) == 1 else None
     else:
         return old__insert(self, objs, fields, return_id, raw, using)
 
@@ -66,16 +35,28 @@ _insert.queryset_only = False
 
 
 ###
+#  This is only used in models.base...
 old__update = QuerySet._update
 
 
 def _update(self, values):
+    tt_needed = hasattr(self.model, '_tt_model')
+
+    if not tt_needed:
+        return old__update(self, values)
+
+    ts = time.time()
+
+    pks = list(self.values_list('pk', flat=True))
+    close_active_records(self.model, pks, ts)
+
     ret = old__update(self, values)
 
-    if hasattr(self.model, '_tt_model'):
-        for obj in self:
-            close_active_record(self.model, obj)
-            insert_history_record(self.model, obj)
+    # No need to do the same hack as in `update` below, no pk's updated
+    pk_name = self.model._meta.pk.name
+    objs = self.model._base_manager.filter(**{pk_name + '__in': pks})
+    history_objs = [create_history_record(self.model, o, ts) for o in objs]
+    insert_history_records(self.model, history_objs)
 
     return ret
 
@@ -85,18 +66,35 @@ _update.queryset_only = False
 
 
 ###
-old_update = QuerySet._update
+old_update = QuerySet.update
 
 
 def update(self, **kwargs):
+    tt_needed = hasattr(self.model, '_tt_model')
+
+    if not tt_needed:
+        return old_update(self, **kwargs)
+
+    ts = time.time()
+
+    pks = list(self.values_list('pk', flat=True))
+    close_active_records(self.model, pks, ts)
+
     ret = old_update(self, **kwargs)
 
-    if hasattr(self.model, '_tt_model'):
-        for obj in self:
-            close_active_record(self.model, obj)
-            insert_history_record(self.model, obj)
+    pk_name = self.model._meta.pk.name
+    if pk_name in kwargs:
+        new_pk_value = kwargs.get(pk_name)
+        obj = self.model._base_manager.get(**{pk_name: new_pk_value})
+        history_objs = [create_history_record(self.model, obj, ts)]
+    else:
+        objs = self.model._base_manager.filter(**{pk_name + '__in': pks})
+        history_objs = [create_history_record(self.model, o, ts) for o in objs]
+    insert_history_records(self.model, history_objs)
 
     return ret
+
+
 update.alters_data = True
 
 

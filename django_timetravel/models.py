@@ -7,6 +7,7 @@ from django.db.models import signals, Model, ForeignKey, OneToOneField
 from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .queryset import patch_queryset
+from .deletion import patch_collector
 from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
 
 
@@ -190,15 +191,12 @@ def copy_fields(model):
 
         fields[_field.name] = _field
 
-    # print model._meta.model_name
-    # for fn, f in fields.items():
-    #     print '    %s: %s' % (fn, f.__class__)
-
     return fields
 
 
 def do_patch():
     patch_queryset()
+    patch_collector()
 
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')
