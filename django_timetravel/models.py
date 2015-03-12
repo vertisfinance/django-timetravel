@@ -7,19 +7,12 @@ from django.db.models import signals, Model, ForeignKey, OneToOneField
 from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .queryset import patch_queryset
-from . import FORBIDDEN_FIELDS, MAX
+from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
 
 
 seen_models = set()
 installed_app_labels = [AppConfig.create(entry).label
                         for entry in settings.INSTALLED_APPS]
-
-PK = FORBIDDEN_FIELDS.get('pk')
-OK = FORBIDDEN_FIELDS.get('ok')
-CU = FORBIDDEN_FIELDS.get('cu')
-DU = FORBIDDEN_FIELDS.get('du')
-VF = FORBIDDEN_FIELDS.get('vf')
-VU = FORBIDDEN_FIELDS.get('vu')
 
 
 def get_migration_app():

@@ -3,15 +3,7 @@ import time
 from django.db.models import QuerySet
 # from django.apps import apps
 
-from . import FORBIDDEN_FIELDS, MAX
-
-
-PK = FORBIDDEN_FIELDS.get('pk')
-OK = FORBIDDEN_FIELDS.get('ok')
-CU = FORBIDDEN_FIELDS.get('cu')
-DU = FORBIDDEN_FIELDS.get('du')
-VF = FORBIDDEN_FIELDS.get('vf')
-VU = FORBIDDEN_FIELDS.get('vu')
+from . import MAX, OK, CU, VF, VU
 
 
 def get_active_record(model, obj):
