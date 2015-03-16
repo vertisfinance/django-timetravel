@@ -15,7 +15,10 @@ modules_not_to_delete = None
 
 @pytest.fixture(scope='module')
 def setup_test_environment(request):
-    """copied from pytest-django"""
+    """
+    We destroy the test database and reload django entirely with a
+    (possibly) different project. Also deletes and recreates migration files.
+    """
     global modules_not_to_delete
 
     DJANGO_SETTINGS_MODULE = request.module.DJANGO_SETTINGS_MODULE
@@ -56,5 +59,13 @@ def setup_test_environment(request):
         teardown_test_environment
         teardown_databases(db_cfg)
         sys.path = orig_path
+
+    request.addfinalizer(teardown)
+
+
+@pytest.fixture(autouse=True)
+def flush(request):
+    def teardown():
+        utils.flush()
 
     request.addfinalizer(teardown)

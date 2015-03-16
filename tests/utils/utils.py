@@ -27,3 +27,8 @@ def makemigrations(project_name):
     delete_migrations(project_name)
     from django.core.management import call_command
     call_command('makemigrations', interactive=False, verbosity=0)
+
+
+def flush():
+    from django.core.management import call_command
+    call_command('flush', interactive=False, verbosity=0)

@@ -11,3 +11,10 @@ def test_simple():
     from product.models import Product
     prod = Product(name='testproduct', price=5.67)
     prod.save()
+    assert prod.pk
+
+
+def test_not_exists():
+    from product.models import Product
+    prod = Product.objects.all()
+    assert not len(prod)
