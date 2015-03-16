@@ -1,5 +1,5 @@
 """
-Django settings for test_project project.
+Django settings for project1 project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/1.7/topics/settings/
@@ -52,9 +52,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'test_project.urls'
+ROOT_URLCONF = 'project1.urls'
 
-WSGI_APPLICATION = 'test_project.wsgi.application'
+WSGI_APPLICATION = 'project1.wsgi.application'
 
 
 # Database
@@ -66,7 +66,8 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': 15432,
         'NAME': 'postgres',
-        'USER': 'postgres'
+        'USER': 'postgres',
+        'TEST_NAME': 'project1',
     }
 }
 
