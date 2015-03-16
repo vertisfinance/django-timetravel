@@ -6,8 +6,7 @@ from django.conf import settings
 from django.db.models import signals, Model, ForeignKey, OneToOneField
 from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
-from .queryset import patch_queryset
-from .deletion import patch_collector
+from .tracking import patch_tracking
 from .transaction import patch_transaction
 
 from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
@@ -197,8 +196,7 @@ def copy_fields(model):
 
 
 def do_patch():
-    patch_queryset()
-    patch_collector()
+    patch_tracking()
     patch_transaction()
 
 
