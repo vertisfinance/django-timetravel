@@ -1,10 +1,9 @@
-import time
-
 from django.db.models import QuerySet
 
 from . import (create_history_record,
                close_active_records,
-               insert_history_records)
+               insert_history_records,
+               get_transaction_start_ts)
 
 
 ###
@@ -21,8 +20,8 @@ def _insert(self, objs, fields, return_id=False,
         for obj in objs:
             pk = old__insert(self, [obj], fields, return_id=True,
                              raw=raw, using=using)
-            ts = time.time()
-            ho = create_history_record(self.model, obj, ts, pk=pk)
+            ts = get_transaction_start_ts()
+            ho = create_history_record(self.model, obj, ts, pk=pk, op='I')
             history_objs.append(ho)
         insert_history_records(self.model, history_objs)
         return pk if len(objs) == 1 else None
@@ -45,7 +44,7 @@ def _update(self, values):
     if not tt_needed:
         return old__update(self, values)
 
-    ts = time.time()
+    ts = get_transaction_start_ts()
 
     pks = list(self.values_list('pk', flat=True))
     close_active_records(self.model, pks, ts)
@@ -55,7 +54,8 @@ def _update(self, values):
     # No need to do the same hack as in `update` below, no pk's updated
     pk_name = self.model._meta.pk.name
     objs = self.model._base_manager.filter(**{pk_name + '__in': pks})
-    history_objs = [create_history_record(self.model, o, ts) for o in objs]
+    history_objs = [create_history_record(self.model, o, ts, op='U')
+                    for o in objs]
     insert_history_records(self.model, history_objs)
 
     return ret
@@ -75,7 +75,7 @@ def update(self, **kwargs):
     if not tt_needed:
         return old_update(self, **kwargs)
 
-    ts = time.time()
+    ts = get_transaction_start_ts()
 
     pks = list(self.values_list('pk', flat=True))
     close_active_records(self.model, pks, ts)
@@ -86,10 +86,11 @@ def update(self, **kwargs):
     if pk_name in kwargs:
         new_pk_value = kwargs.get(pk_name)
         obj = self.model._base_manager.get(**{pk_name: new_pk_value})
-        history_objs = [create_history_record(self.model, obj, ts)]
+        history_objs = [create_history_record(self.model, obj, ts, op='U')]
     else:
         objs = self.model._base_manager.filter(**{pk_name + '__in': pks})
-        history_objs = [create_history_record(self.model, o, ts) for o in objs]
+        history_objs = [create_history_record(self.model, o, ts, op='U')
+                        for o in objs]
     insert_history_records(self.model, history_objs)
 
     return ret

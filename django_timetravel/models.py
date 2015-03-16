@@ -8,6 +8,8 @@ from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .queryset import patch_queryset
 from .deletion import patch_collector
+from .transaction import patch_transaction
+
 from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
 
 
@@ -197,6 +199,7 @@ def copy_fields(model):
 def do_patch():
     patch_queryset()
     patch_collector()
+    patch_transaction()
 
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')

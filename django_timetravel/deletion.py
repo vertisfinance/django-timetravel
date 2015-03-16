@@ -1,18 +1,15 @@
-import time
-
 from django.db.models.deletion import Collector
 from django.utils import six
 
-from . import (create_history_record,
-               close_active_records,
-               insert_history_records)
+from . import (close_active_records, get_transaction_start_ts,
+               create_history_record, insert_history_records)
 
 
 old_delete = Collector.delete
 
 
 def delete(self):
-    ts = time.time()
+    ts = get_transaction_start_ts()
 
     for qs in self.fast_deletes:
         pks = list(qs.values_list('pk', flat=True))
@@ -29,7 +26,8 @@ def delete(self):
         objs = set.union(*sets)
         pks = [o.pk for o in objs]
         close_active_records(model, pks, ts)
-        history_objs = [create_history_record(model, o, ts) for o in objs]
+        history_objs = [create_history_record(model, o, ts, op='U')
+                        for o in objs]
         insert_history_records(model, history_objs)
 
 
