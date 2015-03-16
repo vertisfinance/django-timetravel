@@ -26,7 +26,7 @@ def patch_transaction():
         BaseDatabaseWrapper._tt_patched = True
         BaseDatabaseWrapper.set_autocommit = set_autocommit
 
-    if not hasattr(DatabaseWrapper, '_tt_patched'):
-        DatabaseWrapper._tt_patched = True
+    if not hasattr(DatabaseWrapper, '_tt_patched_subclass'):
+        DatabaseWrapper._tt_patched_subclass = True
         _new = _start_transaction_under_autocommit
         DatabaseWrapper._start_transaction_under_autocommit = _new
