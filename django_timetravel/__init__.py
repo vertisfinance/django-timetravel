@@ -6,8 +6,9 @@ import decimal
 from django.db import connection
 
 
-local_transaction_start = threading.local()
-local_transaction_start.ts = None
+local = threading.local()
+local.tran_ts = None
+local.tt_ts = None
 
 
 FORBIDDEN_FIELDS = {'pk': 'tt_id',
@@ -31,12 +32,12 @@ Q = decimal.Decimal('.000001')
 def get_transaction_start_ts():
     if connection.get_autocommit():
         return decimal.Decimal(time.time()).quantize(Q)
-    assert local_transaction_start.ts is not None, 'This sould not be None...'
-    return local_transaction_start.ts
+    assert local.tran_ts is not None, 'This sould not be None...'
+    return local.tran_ts
 
 
 def set_transaction_start_ts():
-    local_transaction_start.ts = decimal.Decimal(time.time()).quantize(Q)
+    local.tran_ts = decimal.Decimal(time.time()).quantize(Q)
 
 
 def get_active_records(model, pks):
