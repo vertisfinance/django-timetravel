@@ -63,7 +63,7 @@ def setup_test_environment(request):
     request.addfinalizer(teardown)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def flush(request):
     def teardown():
         utils.flush()

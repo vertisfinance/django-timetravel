@@ -40,6 +40,25 @@ def set_transaction_start_ts():
     local.tran_ts = decimal.Decimal(time.time()).quantize(Q)
 
 
+def get_tt_ts():
+    return local.tt_ts
+
+
+def set_tt_ts(ts):
+    try:
+        _ts = decimal.Decimal(ts).quantize(Q)
+    except:
+        raise Exception('Could not convert timetravel destination (%s) '
+                        'to Decimal object.') % ts
+    global local  # hmmm, funny
+    local.tt_ts = _ts
+
+
+def clear_tt_ts():
+    global local
+    local.tt_ts = None
+
+
 def get_active_records(model, pks):
     return model._tt_model.objects.filter(**{OK + '__in': pks, VU: MAX})
 
@@ -67,3 +86,15 @@ def create_history_record(model, obj, ts, pk=None, op=None):
 
 def insert_history_records(model, history_objs):
     model._tt_model.objects.bulk_create(history_objs)
+
+
+class timetravel(object):
+    """The timetravel context manager."""
+    def __init__(self, ts):
+        self.tt_ts = ts
+
+    def __enter__(self):
+        set_tt_ts(self.tt_ts)
+
+    def __exit__(self, type, value, traceback):
+        clear_tt_ts()

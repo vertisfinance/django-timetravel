@@ -1,9 +1,7 @@
 import os
 import sys
-import time
 
 import django
-from django.db import connection
 from django.db import transaction
 
 
@@ -17,27 +15,52 @@ django.setup()
 
 
 from product.models import Product
+from django.contrib.auth.models import User
+from django.core.management import call_command
+
+from django_timetravel import timetravel
 
 
-p = Product(name='x', price=1)
+call_command('flush', interactive=False, verbosity=0)
+
+
+with transaction.atomic():
+    alice = User.objects.create_user('alice', password='alice')
+    bob = User.objects.create_user('bob', password='bob')
+    charlie = User.objects.create_user('charlie', password='charlie')
+
+p = Product(name='a', price=1)
+p.save()
+p.maintainers.add(alice, bob)
 p.save()
 
+with timetravel(1):
+    qs = Product.objects.all()
+    products = list(qs)
+    m = list(products[0].maintainers.all().order_by('pk'))
 
-with transaction.atomic():
-    p = Product(name='y', price=1)
-    p.save()
-    p.price = 2
-    p.save()
-    p.delete()
+    qs = Product.objects.all().order_by('pk')
+    products = list(qs)
 
 
-with transaction.atomic():
-    p = Product(name='z', price=1)
-    p.save()
-    p.price = 2
-    p.save()
-    p.price = 3
-    p.save()
+list(Product._tt_model.objects.filter(pk=1))
+
+
+# with transaction.atomic():
+#     p = Product(name='y', price=1)
+#     p.save()
+#     p.price = 2
+#     p.save()
+#     p.delete()
+
+
+# with transaction.atomic():
+#     p = Product(name='z', price=1)
+#     p.save()
+#     p.price = 2
+#     p.save()
+#     p.price = 3
+#     p.save()
 
 # def get_now():
 #     cur = connection.cursor()
@@ -76,5 +99,6 @@ with transaction.atomic():
 # get_autocommit()
 
 
+# from django.db import connection
 # for q in connection.queries:
 #     print q['sql']

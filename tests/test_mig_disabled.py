@@ -7,6 +7,7 @@ DISABLE_MIGRATIONS = False
 pytestmark = pytest.mark.usefixtures('setup_test_environment')
 
 
+@pytest.mark.usefixtures('flush')
 def test_tables_exist():
     """Test this by simply insert."""
     from student.models import Student

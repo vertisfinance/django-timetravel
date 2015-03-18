@@ -7,6 +7,7 @@ DISABLE_MIGRATIONS = False
 pytestmark = pytest.mark.usefixtures('setup_test_environment')
 
 
+@pytest.mark.usefixtures('flush')
 def test_transaction():
     from product.models import Product
     from django.db import transaction

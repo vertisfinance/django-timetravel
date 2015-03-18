@@ -8,6 +8,7 @@ from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .tracking import patch_tracking
 from .transaction import patch_transaction
+from .options import patch_options
 
 from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
 
@@ -94,12 +95,13 @@ def create_timetravel_model(for_model):
     for_model._tt_has_history = True
     ret = type(str(name), (Model,), attrs)
     for_model._tt_model = ret
+    for_model._meta._tt_model = ret
     return ret
 
 
 def auto_to_integer(field):
     _field = BigIntegerField()
-    _field.name = field.name
+    _field.name = field.attname
     _field.db_index = field.db_index
     _field.verbose_name = field.verbose_name
     _field.db_column = field.db_column
@@ -161,7 +163,7 @@ def copy_fields(model):
 
         if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
             _field = copy.copy(field.rel.to._meta.pk)
-            _field.name = field.name
+            _field.name = field.attname
             _field.primary_key = False
             _field.db_index = True
         else:
@@ -180,6 +182,7 @@ def copy_fields(model):
             _field.primary_key = False
             _field.serialize = True
             _field.name = OK
+            _field.db_column = field.db_column or field.name
             _field.db_index = True
             _field.null = False
 
@@ -198,6 +201,7 @@ def copy_fields(model):
 def do_patch():
     patch_tracking()
     patch_transaction()
+    patch_options()
 
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')
