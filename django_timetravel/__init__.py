@@ -29,15 +29,19 @@ MAX = 999999999999
 Q = decimal.Decimal('.000001')
 
 
+def to_decimal(f):
+    return decimal.Decimal(f).quantize(Q)
+
+
 def get_transaction_start_ts():
     if connection.get_autocommit():
-        return decimal.Decimal(time.time()).quantize(Q)
+        return to_decimal(time.time())
     assert local.tran_ts is not None, 'This sould not be None...'
     return local.tran_ts
 
 
 def set_transaction_start_ts():
-    local.tran_ts = decimal.Decimal(time.time()).quantize(Q)
+    local.tran_ts = to_decimal(time.time())
 
 
 def get_tt_ts():
@@ -46,7 +50,7 @@ def get_tt_ts():
 
 def set_tt_ts(ts):
     try:
-        _ts = decimal.Decimal(ts).quantize(Q)
+        _ts = to_decimal(ts)
     except:
         raise Exception('Could not convert timetravel destination (%s) '
                         'to Decimal object.') % ts

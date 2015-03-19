@@ -8,7 +8,7 @@ NI()
 class Product(models.Model):
     name = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    maintainers = models.ManyToManyField('auth.User')
+    maintainers = models.ManyToManyField('auth.User', related_name='products')
 
     def __unicode__(self):
-        return 'product %s, price: %s' % (self.name, self.price)
+        return 'product(%s) %s, price: %s' % (self.pk, self.name, self.price)

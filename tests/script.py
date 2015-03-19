@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import django
 from django.db import transaction
@@ -18,7 +19,7 @@ from product.models import Product
 from django.contrib.auth.models import User
 from django.core.management import call_command
 
-from django_timetravel import timetravel
+from django_timetravel import timetravel, to_decimal
 
 
 call_command('flush', interactive=False, verbosity=0)
@@ -31,74 +32,34 @@ with transaction.atomic():
 
 p = Product(name='a', price=1)
 p.save()
+
+t1 = to_decimal(time.time())
+
+p.price = 2
 p.maintainers.add(alice, bob)
 p.save()
 
-with timetravel(1):
-    qs = Product.objects.all()
-    products = list(qs)
-    m = list(products[0].maintainers.all().order_by('pk'))
-
-    qs = Product.objects.all().order_by('pk')
-    products = list(qs)
+t2 = to_decimal(time.time())
 
 
-list(Product._tt_model.objects.filter(pk=1))
+def print_product(p):
+    print p
+    for m in p.maintainers.all():
+        print '    %s' % m
 
 
-# with transaction.atomic():
-#     p = Product(name='y', price=1)
-#     p.save()
-#     p.price = 2
-#     p.save()
-#     p.delete()
+print 't1'
+with timetravel(t1):
+    p = Product.objects.get(name='a')
+    print_product(p)
+    p = alice.products.all()
+    print p
 
 
-# with transaction.atomic():
-#     p = Product(name='z', price=1)
-#     p.save()
-#     p.price = 2
-#     p.save()
-#     p.price = 3
-#     p.save()
+print 't2'
+with timetravel(t2):
+    p = Product.objects.get(name='a')
+    print_product(p)
 
-# def get_now():
-#     cur = connection.cursor()
-#     cur.execute('SELECT now()')
-#     now = cur.fetchone()[0]
-#     print now
-
-
-# def get_autocommit():
-#     print 'autocommit is %s' % connection.get_autocommit()
-
-
-# get_autocommit()
-
-# with transaction.atomic():
-#     get_autocommit()
-#     get_now()
-#     time.sleep(0.5)
-#     get_now()
-#     p = Product(name='x', price=1)
-#     p.save()
-#     time.sleep(0.5)
-#     get_now()
-#     time.sleep(0.5)
-#     prods = list(Product.objects.all())
-#     get_now()
-#     get_autocommit()
-
-
-# get_autocommit()
-
-# with transaction.atomic():
-#     get_autocommit()
-#     get_now()
-
-# get_autocommit()
-
-
-# from django.db import connection
-# for q in connection.queries:
-#     print q['sql']
+    p = alice.products.all()
+    print p

@@ -129,11 +129,11 @@ def delete(self):
 
 
 def patch_tracking():
-    if not hasattr(Collector, '_tt_patched'):
+    if not hasattr(Collector, '_tt_tracking_patched'):
         Collector._tt_patched = True
         Collector.delete = delete
 
-    if not hasattr(QuerySet, '_tt_patched'):
+    if not hasattr(QuerySet, '_tt_tracking_patched'):
         QuerySet._tt_patched = True
         QuerySet._insert = _insert
         QuerySet._update = _update

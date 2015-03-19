@@ -22,11 +22,11 @@ def _start_transaction_under_autocommit(self):
 
 
 def patch_transaction():
-    if not hasattr(BaseDatabaseWrapper, '_tt_patched'):
-        BaseDatabaseWrapper._tt_patched = True
+    if not hasattr(BaseDatabaseWrapper, '_tt_transaction_patched'):
+        BaseDatabaseWrapper._tt_transaction_patched = True
         BaseDatabaseWrapper.set_autocommit = set_autocommit
 
-    if not hasattr(DatabaseWrapper, '_tt_patched_subclass'):
-        DatabaseWrapper._tt_patched_subclass = True
+    if not hasattr(DatabaseWrapper, '_tt_transaction_patched_subclass'):
+        DatabaseWrapper._tt_transaction_patched_subclass = True
         _new = _start_transaction_under_autocommit
         DatabaseWrapper._start_transaction_under_autocommit = _new

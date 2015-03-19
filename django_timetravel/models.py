@@ -8,7 +8,7 @@ from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .tracking import patch_tracking
 from .transaction import patch_transaction
-from .options import patch_options
+from .fetching import patch_fetching
 
 from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
 
@@ -201,7 +201,7 @@ def copy_fields(model):
 def do_patch():
     patch_tracking()
     patch_transaction()
-    patch_options()
+    patch_fetching()
 
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')
