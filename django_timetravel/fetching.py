@@ -82,10 +82,10 @@ def get_from_clause(self):
 
 
 def patch_fetching():
-    if not hasattr(Options, '_tt_patched'):
-        Options._tt_patched = True
+    if not hasattr(Options, '_tt_fetching_patched'):
+        Options._tt_fetching_patched = True
         Options.db_table = DBTableDescriptor()
 
-    if not hasattr(SQLCompiler, '_tt_patched'):
-        SQLCompiler._tt_patched = True
+    if not hasattr(SQLCompiler, '_tt_fetching_patched'):
+        SQLCompiler._tt_fetching_patched = True
         SQLCompiler.get_from_clause = get_from_clause

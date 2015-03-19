@@ -50,16 +50,27 @@ def print_product(p):
 
 print 't1'
 with timetravel(t1):
+    alice = User.objects.get(username='alice')
+
     p = Product.objects.get(name='a')
     print_product(p)
-    p = alice.products.all()
-    print p
+    ps = alice.products.all()
+    print ps
 
+
+qs = Product.objects.all()
 
 print 't2'
 with timetravel(t2):
+    alice = User.objects.get(username='alice')
+
     p = Product.objects.get(name='a')
     print_product(p)
 
-    p = alice.products.all()
-    print p
+    ps = alice.products.all()
+    print ps
+    print qs
+
+
+# print 'out of context'
+# print p

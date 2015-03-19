@@ -9,6 +9,7 @@ from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
 from .tracking import patch_tracking
 from .transaction import patch_transaction
 from .fetching import patch_fetching
+from .safety import patch_safety
 
 from . import FORBIDDEN_FIELDS, MAX, PK, OK, CU, DU, VF, VU
 
@@ -202,6 +203,7 @@ def do_patch():
     patch_tracking()
     patch_transaction()
     patch_fetching()
+    patch_safety()
 
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')
