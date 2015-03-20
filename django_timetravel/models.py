@@ -125,13 +125,21 @@ def get_user_model():
     return apps.get_registered_model(app_label, model_name)
 
 
+def get_non_related(field):
+    try:
+        points_to = field.rel.to._meta.pk
+    except AttributeError:
+        return copy.copy(field)
+    else:
+        return get_non_related(points_to)
+
+
 def create_user_field(name):
     user_field = get_user_model()._meta.pk
+    user_field = get_non_related(user_field)
 
     if isinstance(user_field, AutoField):
         user_field = auto_to_integer(user_field)
-    else:
-        user_field = copy.copy(user_field)
 
     user_field.name = name
     user_field.primary_key = False
@@ -140,15 +148,6 @@ def create_user_field(name):
     user_field.auto_created = True
 
     return user_field
-
-
-def get_non_related(field):
-    try:
-        points_to = field.rel.to._meta.pk
-    except AttributeError:
-        return copy.copy(field)
-    else:
-        return get_non_related(points_to)
 
 
 def copy_fields(model):
@@ -188,10 +187,10 @@ def copy_fields(model):
             _field.primary_key = False
             _field.serialize = True
             _field.name = OK
-            _field.db_column = field.db_column or field.attname
             _field.db_index = True
             _field.null = False
 
+        _field.db_column = field.db_column or field.attname
         _field._unique = False
         _field.unique_for_date = False if _field.unique_for_date else None
         _field.unique_for_month = False if _field.unique_for_month else None

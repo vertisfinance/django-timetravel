@@ -7,7 +7,6 @@ import pytest
 from pytest_django.plugin import _setup_django
 from pytest_django.migrations import DisableMigrations
 
-# from .utils import utils
 from . import (get_project_path, makemigrations,
                delete_migrations, flush as flush_db)
 
@@ -34,7 +33,6 @@ def setup_test_environment(request):
         - `DISABLE_MIGRATIONS`: When set to `True`, test db creation will not
                                 use the migration machinery.
     """
-
     global modules_not_to_delete
 
     settings_module = request.module.DJANGO_SETTINGS_MODULE
@@ -72,15 +70,17 @@ def setup_test_environment(request):
 
     def teardown():
         teardown_test_environment
-        teardown_databases(db_cfg)
+        db_keep = getattr(request.module, 'DB_KEEP', False)
+        if not db_keep:
+            teardown_databases(db_cfg)
         sys.path = orig_path
         delete_migrations(project_path)
 
     request.addfinalizer(teardown)
 
 
-@pytest.fixture()
-def flush(request):
+@pytest.fixture(scope='class')
+def flush_after(request):
     def teardown():
         flush_db()
 
