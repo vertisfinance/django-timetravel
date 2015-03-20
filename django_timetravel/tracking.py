@@ -5,7 +5,9 @@ from django.utils import six
 from . import (create_history_record,
                close_active_records,
                insert_history_records,
-               get_transaction_start_ts)
+               get_transaction_start_ts,
+               TimeTravelDBModException,
+               get_tt_ts)
 
 
 ###
@@ -14,6 +16,9 @@ old__insert = QuerySet._insert
 
 def _insert(self, objs, fields, return_id=False,
             raw=False, using=None):
+    if get_tt_ts():
+        raise TimeTravelDBModException()
+
     if hasattr(self.model, '_tt_model'):
         # Must not allow multiple objs in _insert, or else we have no way to
         # retrieve the pk of newly inserted rows
@@ -41,6 +46,9 @@ old__update = QuerySet._update
 
 
 def _update(self, values):
+    if get_tt_ts():
+        raise TimeTravelDBModException()
+
     tt_needed = hasattr(self.model, '_tt_model')
 
     if not tt_needed:
@@ -72,6 +80,9 @@ old_update = QuerySet.update
 
 
 def update(self, **kwargs):
+    if get_tt_ts():
+        raise TimeTravelDBModException()
+
     tt_needed = hasattr(self.model, '_tt_model')
 
     if not tt_needed:
@@ -106,6 +117,9 @@ old_delete = Collector.delete
 
 
 def delete(self):
+    if get_tt_ts():
+        raise TimeTravelDBModException()
+
     ts = get_transaction_start_ts()
 
     for qs in self.fast_deletes:

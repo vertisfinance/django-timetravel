@@ -11,22 +11,43 @@ local.tran_ts = None
 local.tt_ts = None
 
 
-FORBIDDEN_FIELDS = {'pk': 'tt_id',
-                    'ok': 'tt_orig_id',
-                    'cu': 'tt_create_modif_user_id',
-                    'du': 'tt_delete_user_id',
-                    'vf': 'tt_valid_from_ts',
-                    'vu': 'tt_valid_until_ts'}
+PK = 'tt_id'
+OK = 'tt_orig_id'
+CU = 'tt_create_modif_user_id'
+DU = 'tt_delete_user_id'
+VF = 'tt_valid_from_ts'
+VU = 'tt_valid_until_ts'
+FORBIDDEN_FIELDS = (PK, OK, CU, DU, VF, VU)
 
-PK = FORBIDDEN_FIELDS.get('pk')
-OK = FORBIDDEN_FIELDS.get('ok')
-CU = FORBIDDEN_FIELDS.get('cu')
-DU = FORBIDDEN_FIELDS.get('du')
-VF = FORBIDDEN_FIELDS.get('vf')
-VU = FORBIDDEN_FIELDS.get('vu')
 
 MAX = 999999999999
 Q = decimal.Decimal('.000001')
+
+
+class TimeTravelModelError(Exception):
+    def __init__(self, obj):
+        actual_ctx = get_tt_ts()
+        model_ctx = obj._tt_ts
+
+        message = 'Using `%s` instance from %s in context %s'
+        message = message % (obj._meta.model_name, model_ctx, actual_ctx)
+        super(TimeTravelModelError, self).__init__(message)
+
+
+class TimeTravelQuerySetError(Exception):
+    def __init__(self, obj):
+        actual_ctx = get_tt_ts()
+        qs_ctx = obj._tt_ts
+
+        message = 'Using QuerySet from %s in context %s'
+        message = message % (qs_ctx, actual_ctx)
+        super(TimeTravelQuerySetError, self).__init__(message)
+
+
+class TimeTravelDBModException(Exception):
+    def __init__(self):
+        message = 'Saving or deleting in timetravel context is forbidden'
+        super(TimeTravelDBModException, self).__init__(message)
 
 
 def to_decimal(f):

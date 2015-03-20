@@ -3,7 +3,7 @@ import copy
 from django.apps.config import AppConfig
 from django.apps import apps
 from django.conf import settings
-from django.db.models import signals, Model, ForeignKey, OneToOneField
+from django.db.models import signals, Model
 from django.db.models.fields import (AutoField, BigIntegerField, DecimalField,
                                      BooleanField)
 from .tracking import patch_tracking
@@ -24,9 +24,10 @@ def get_migration_app():
     If you use timetravel this key must be set in settings.
     The app specified here must be present in INSTALLED_APPS.
     """
-    if hasattr(settings, 'TIMETRAVEL_MIGRATION_APP'):
-        return settings.TIMETRAVEL_MIGRATION_APP
-    raise Exception('No migration app given')
+    tt_app = getattr(settings, 'TIMETRAVEL_MIGRATION_APP', None)
+    if not tt_app:
+        raise Exception('No migration app given')
+    return tt_app
 
 
 def process_models(sender, **kwargs):
@@ -167,7 +168,7 @@ def copy_fields(model):
                          auto_created=True)}
 
     for field in model._meta.local_fields:
-        if field.name in FORBIDDEN_FIELDS.values():
+        if field.name in FORBIDDEN_FIELDS:
             raise Exception('Can not use `%s` as a field name '
                             'with django-timetravel')
 

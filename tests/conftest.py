@@ -7,7 +7,9 @@ import pytest
 from pytest_django.plugin import _setup_django
 from pytest_django.migrations import DisableMigrations
 
-from .utils import utils
+# from .utils import utils
+from . import (get_project_path, makemigrations,
+               delete_migrations, flush as flush_db)
 
 
 modules_not_to_delete = None
@@ -38,7 +40,7 @@ def setup_test_environment(request):
     settings_module = request.module.DJANGO_SETTINGS_MODULE
     os.environ['DJANGO_SETTINGS_MODULE'] = settings_module
 
-    project_path = utils.get_project_path(request.module.DJANGO_PROJECT)
+    project_path = get_project_path(request.module.DJANGO_PROJECT)
     orig_path = sys.path[:]
     sys.path.insert(0, project_path)
 
@@ -54,11 +56,11 @@ def setup_test_environment(request):
     from django.conf import settings
 
     settings.DEBUG = False
-    if all([hasattr(request.module, 'DISABLE_MIGRATIONS'),
-            request.module.DISABLE_MIGRATIONS]):
+
+    if getattr(request.module, 'DISABLE_MIGRATIONS', False):
         settings.MIGRATION_MODULES = DisableMigrations()
     else:
-        utils.makemigrations(project_path)
+        makemigrations(project_path)
 
     from pytest_django.compat import (setup_test_environment,
                                       teardown_test_environment,
@@ -72,7 +74,7 @@ def setup_test_environment(request):
         teardown_test_environment
         teardown_databases(db_cfg)
         sys.path = orig_path
-        utils.delete_migrations(project_path)
+        delete_migrations(project_path)
 
     request.addfinalizer(teardown)
 
@@ -80,6 +82,6 @@ def setup_test_environment(request):
 @pytest.fixture()
 def flush(request):
     def teardown():
-        utils.flush()
+        flush_db()
 
     request.addfinalizer(teardown)

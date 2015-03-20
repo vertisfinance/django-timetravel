@@ -1,26 +1,6 @@
 from django.db.models import Model, QuerySet
 
-from . import get_tt_ts
-
-
-class TimeTravelModelError(Exception):
-    def __init__(self, obj):
-        actual_ctx = get_tt_ts()
-        model_ctx = obj._tt_ts
-
-        message = 'Using `%s` instance from %s in context %s'
-        message = message % (obj._meta.model_name, model_ctx, actual_ctx)
-        super(TimeTravelModelError, self).__init__(message)
-
-
-class TimeTravelQuerySetError(Exception):
-    def __init__(self, obj):
-        actual_ctx = get_tt_ts()
-        qs_ctx = obj._tt_ts
-
-        message = 'Using QuerySet from %s in context %s'
-        message = message % (qs_ctx, actual_ctx)
-        super(TimeTravelQuerySetError, self).__init__(message)
+from . import get_tt_ts, TimeTravelModelError, TimeTravelQuerySetError
 
 
 old___getattribute__ = Model.__getattribute__
