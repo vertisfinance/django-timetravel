@@ -14,8 +14,7 @@ def get_project_path(project_name):
             raise Exception('No `pytest.ini` found.')
 
 
-def delete_migrations(project_name):
-    project_path = get_project_path(project_name)
+def delete_migrations(project_path):
     for dirpath, dirnames, filenames in os.walk(project_path):
         if os.path.split(dirpath)[1] == 'migrations':
             for fn in [fn for fn in filenames if re.search('^\d{4}_', fn)]:
@@ -23,8 +22,8 @@ def delete_migrations(project_name):
                 os.remove(to_delete)
 
 
-def makemigrations(project_name):
-    delete_migrations(project_name)
+def makemigrations(project_path):
+    delete_migrations(project_path)
     from django.core.management import call_command
     call_command('makemigrations', interactive=False, verbosity=0)
 

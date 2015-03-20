@@ -1,5 +1,5 @@
 """
-Django settings for project2 project.
+Django settings for trading_system project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/
@@ -17,7 +17,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/dev/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '$-j072$-pqp!j+lg55*z$5=+$lwt@mu!g&80ev#!l2q7^+0y93'
+SECRET_KEY = '2y!5erpyd1v4f_tk_7p+_br=@g%gs+2s9pf94(@ooxbva00m_l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -36,8 +36,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'student'
+    'django_timetravel', 'tt',
+    'product',
+    'client'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -50,9 +51,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'project2.urls'
+ROOT_URLCONF = 'trading_system.urls'
 
-WSGI_APPLICATION = 'project2.wsgi.application'
+WSGI_APPLICATION = 'trading_system.wsgi.application'
 
 
 # Database
@@ -65,7 +66,7 @@ DATABASES = {
         'PORT': 15432,
         'NAME': 'postgres',
         'USER': 'postgres',
-        'TEST_NAME': 'project2',
+        'TEST_NAME': 'trading_system_test',
     }
 }
 
@@ -87,3 +88,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
+
+TIMETRAVEL_MIGRATION_APP = 'tt'

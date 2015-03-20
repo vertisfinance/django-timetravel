@@ -16,19 +16,31 @@ modules_not_to_delete = None
 @pytest.fixture(scope='module')
 def setup_test_environment(request):
     """
-    We destroy the test database and reload django entirely with a
-    (possibly) different project. Also deletes and recreates migration files.
+    Sets up a django test environment, makes migration files (deletes
+    existing ones first), creates test database and applies migrations.
+    At the end database is destroyed, migration files are deleted.
+
+    It is not easy to run two different django apps in one process, even if
+    we do it one after the other. Most modules need to be reimported, which
+    involves some hacking :(.
+
+    Modules must define:
+        - `DJANGO_SETTINGS_MODULE`: will set the environment variable
+        - `DJANGO_PROJECT`: path to the project main directory relative to
+                            `pytest.ini`
+    Optional:
+        - `DISABLE_MIGRATIONS`: When set to `True`, test db creation will not
+                                use the migration machinery.
     """
+
     global modules_not_to_delete
 
-    DJANGO_SETTINGS_MODULE = request.module.DJANGO_SETTINGS_MODULE
-    DJANGO_PROJECT = request.module.DJANGO_PROJECT
-    DJANGO_PROJECT_PATH = utils.get_project_path(DJANGO_PROJECT)
+    settings_module = request.module.DJANGO_SETTINGS_MODULE
+    os.environ['DJANGO_SETTINGS_MODULE'] = settings_module
 
-    os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
-
+    project_path = utils.get_project_path(request.module.DJANGO_PROJECT)
     orig_path = sys.path[:]
-    sys.path.insert(0, DJANGO_PROJECT_PATH)
+    sys.path.insert(0, project_path)
 
     if not modules_not_to_delete:
         modules_not_to_delete = sys.modules.keys()
@@ -42,10 +54,11 @@ def setup_test_environment(request):
     from django.conf import settings
 
     settings.DEBUG = False
-    if request.module.DISABLE_MIGRATIONS:
+    if all([hasattr(request.module, 'DISABLE_MIGRATIONS'),
+            request.module.DISABLE_MIGRATIONS]):
         settings.MIGRATION_MODULES = DisableMigrations()
     else:
-        utils.makemigrations(DJANGO_PROJECT)
+        utils.makemigrations(project_path)
 
     from pytest_django.compat import (setup_test_environment,
                                       teardown_test_environment,
@@ -59,6 +72,7 @@ def setup_test_environment(request):
         teardown_test_environment
         teardown_databases(db_cfg)
         sys.path = orig_path
+        utils.delete_migrations(project_path)
 
     request.addfinalizer(teardown)
 

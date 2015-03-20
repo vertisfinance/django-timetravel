@@ -141,6 +141,15 @@ def create_user_field(name):
     return user_field
 
 
+def get_non_related(field):
+    try:
+        points_to = field.rel.to._meta.pk
+    except AttributeError:
+        return copy.copy(field)
+    else:
+        return get_non_related(points_to)
+
+
 def copy_fields(model):
     """
     Creates copies of the model's original fields, returning
@@ -162,13 +171,8 @@ def copy_fields(model):
             raise Exception('Can not use `%s` as a field name '
                             'with django-timetravel')
 
-        if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
-            _field = copy.copy(field.rel.to._meta.pk)
-            _field.name = field.attname
-            _field.primary_key = False
-            _field.db_index = True
-        else:
-            _field = copy.copy(field)
+        _field = get_non_related(field)
+        _field.primary_key = field.primary_key
 
         if isinstance(_field, AutoField):
             _field = auto_to_integer(field)
@@ -183,7 +187,7 @@ def copy_fields(model):
             _field.primary_key = False
             _field.serialize = True
             _field.name = OK
-            _field.db_column = field.db_column or field.name
+            _field.db_column = field.db_column or field.attname
             _field.db_index = True
             _field.null = False
 
