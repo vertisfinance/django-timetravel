@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 
 import pytest
 from pytest_django.plugin import _setup_django
@@ -69,10 +70,10 @@ def setup_test_environment(request):
     db_cfg = setup_databases(verbosity=0, interactive=False)
 
     def teardown():
-        teardown_test_environment
         db_keep = getattr(request.module, 'DB_KEEP', False)
         if not db_keep:
             teardown_databases(db_cfg)
+        teardown_test_environment()
         sys.path = orig_path
         delete_migrations(project_path)
 
@@ -85,3 +86,19 @@ def flush_after(request):
         flush_db()
 
     request.addfinalizer(teardown)
+
+
+class Timestamps:
+    ts = {}
+
+    def set(self, name):
+        from django_timetravel import to_decimal
+        self.ts[name] = to_decimal(time.time())
+
+    def get(self, name):
+        return self.ts[name]
+
+
+@pytest.fixture(scope='class')
+def timestamps():
+    return Timestamps()

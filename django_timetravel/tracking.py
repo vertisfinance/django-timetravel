@@ -16,7 +16,7 @@ old__insert = QuerySet._insert
 
 def _insert(self, objs, fields, return_id=False,
             raw=False, using=None):
-    if get_tt_ts():
+    if get_tt_ts() is not None:
         raise TimeTravelDBModException()
 
     if hasattr(self.model, '_tt_model'):
@@ -46,7 +46,7 @@ old__update = QuerySet._update
 
 
 def _update(self, values):
-    if get_tt_ts():
+    if get_tt_ts() is not None:
         raise TimeTravelDBModException()
 
     tt_needed = hasattr(self.model, '_tt_model')
@@ -80,7 +80,7 @@ old_update = QuerySet.update
 
 
 def update(self, **kwargs):
-    if get_tt_ts():
+    if get_tt_ts() is not None:
         raise TimeTravelDBModException()
 
     tt_needed = hasattr(self.model, '_tt_model')
@@ -117,7 +117,7 @@ old_delete = Collector.delete
 
 
 def delete(self):
-    if get_tt_ts():
+    if get_tt_ts() is not None:
         raise TimeTravelDBModException()
 
     ts = get_transaction_start_ts()

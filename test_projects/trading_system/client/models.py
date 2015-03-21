@@ -4,6 +4,7 @@ from django.db import models
 class Client(models.Model):
     name = models.CharField(max_length=100)
     signed_contracts = models.ManyToManyField('Contract')
+    classification = models.CharField(max_length=1, default='A')
 
     def __unicode__(self):
         return self.name
@@ -18,6 +19,8 @@ class Contract(models.Model):
     tradable_products = models.ManyToManyField('product.Product')
 
 
+# To test chained inheritance
+# Funny, but this does not work as expected in django itself.
 class A(models.Model):
     a = models.CharField(max_length=1, primary_key=True)
 
