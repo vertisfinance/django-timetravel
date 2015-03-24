@@ -31,7 +31,7 @@ def get_migration_app():
 
 
 def process_models(sender, **kwargs):
-    if hasattr(sender, '_tt_is_timetravel_model'):
+    if sender and hasattr(sender, '_tt_is_timetravel_model'):
         return False
 
     do_patch()
@@ -48,12 +48,13 @@ def process_models(sender, **kwargs):
             model = app_models[model_name]
             known_models[entry] = model
 
-    app_label = sender._meta.app_label
-    model_name = sender._meta.model_name
-    entry = '%s.%s' % (app_label, model_name)
+    if sender:
+        app_label = sender._meta.app_label
+        model_name = sender._meta.model_name
+        entry = '%s.%s' % (app_label, model_name)
 
-    if app_label in installed_app_labels:
-        known_models[entry] = sender
+        if app_label in installed_app_labels:
+            known_models[entry] = sender
 
     while True:
         created = False
@@ -240,3 +241,5 @@ def do_patch():
 
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')
+process_models(None)
+

@@ -16,8 +16,8 @@ class Command(NoArgsCommand):
         models = [m for m in models if not m._meta.proxy]
         for i, m in enumerate(models):
             if verbosity:
-                msg = u'%s / %s: %s' % (i + 1, len(models), m._meta.model_name)
-                self.stdout.write(msg)
+                msg = u'%s/%s: %s' % (i + 1, len(models), m._meta.model_name)
+                self.stdout.write(msg, self.style.MIGRATE_LABEL)
 
             numobjs = m.objects.all().count()
             with atomic():
@@ -28,13 +28,15 @@ class Command(NoArgsCommand):
                     collected.append(create_history_record(m, obj, MIN))
                     if len(collected) == chunk_size:
                         if verbosity:
-                            msg = u'    %s / %s' % (j + 1, numobjs)
-                            self.stdout.write(msg)
+                            msg = u'    %s/%s' % (j + 1, numobjs)
+                            self.stdout.write(msg, ending=' ')
+                            self.stdout.write('OK', self.style.MIGRATE_SUCCESS)
                         insert_history_records(m, collected)
                         collected = []
 
                 if collected:
                     if verbosity:
-                        msg = u'    %s / %s' % (j + 1, numobjs)
-                        self.stdout.write(msg)
+                        msg = u'    %s/%s' % (j + 1, numobjs)
+                        self.stdout.write(msg, ending=' ')
+                        self.stdout.write('OK', self.style.MIGRATE_SUCCESS)
                     insert_history_records(m, collected)
