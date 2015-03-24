@@ -11,6 +11,26 @@ pytestmark = pytest.mark.usefixtures('setup_test_environment')
 
 # @pytest.mark.usefixtures('flush_after')
 class TestCreation:
+    def test_management_command(self):
+        from django.core.management import call_command
+        call_command('init_timetravel',
+                     interactive=False,
+                     verbosity=1,
+                     chunk_size=1)
+
+        call_command('init_timetravel',
+                     interactive=False,
+                     verbosity=1)
+
+        call_command('init_timetravel',
+                     interactive=False,
+                     verbosity=0,
+                     chunk_size=1)
+
+        call_command('init_timetravel',
+                     interactive=False,
+                     verbosity=0)
+
     def test_create_user(self, timestamps):
         """Create some users."""
 

@@ -7,6 +7,7 @@ from ... import MIN, create_history_record, insert_history_records
 
 class Command(NoArgsCommand):
     def handle_noargs(self, **options):
+        chunk_size = options.get('chunk_size', 1000)
         verbosity = options.get('verbosity', 0)
         models = apps.get_models(include_auto_created=True,
                                  include_deferred=True,
@@ -25,7 +26,7 @@ class Command(NoArgsCommand):
                 collected = []
                 for j, obj in enumerate(m.objects.all()):
                     collected.append(create_history_record(m, obj, MIN))
-                    if len(collected) == 1000:
+                    if len(collected) == chunk_size:
                         if verbosity:
                             msg = u'    %s / %s' % (j + 1, numobjs)
                             self.stdout.write(msg)

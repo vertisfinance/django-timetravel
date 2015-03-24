@@ -1,6 +1,5 @@
 import os
 import re
-import time
 
 
 def get_project_path(project_name):
