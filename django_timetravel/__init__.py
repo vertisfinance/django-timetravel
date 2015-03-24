@@ -21,6 +21,7 @@ FORBIDDEN_FIELDS = (PK, OK, CU, DU, VF, VU)
 
 
 MAX = 999999999999
+MIN = -MAX
 Q = decimal.Decimal('.000001')
 
 
@@ -66,6 +67,10 @@ def set_transaction_start_ts():
 
 
 def get_tt_ts():
+    try:
+        local.tt_ts
+    except AttributeError:
+        local.tt_ts = None
     return local.tt_ts
 
 

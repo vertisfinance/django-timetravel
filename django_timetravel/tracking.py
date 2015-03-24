@@ -19,21 +19,22 @@ def _insert(self, objs, fields, return_id=False,
     if get_tt_ts() is not None:
         raise TimeTravelDBModException()
 
-    if hasattr(self.model, '_tt_model'):
-        # Must not allow multiple objs in _insert, or else we have no way to
-        # retrieve the pk of newly inserted rows
-        # TODO: Warning
-        history_objs = []
-        for obj in objs:
-            pk = old__insert(self, [obj], fields, return_id=True,
-                             raw=raw, using=using)
-            ts = get_transaction_start_ts()
-            ho = create_history_record(self.model, obj, ts, pk=pk, op='I')
-            history_objs.append(ho)
-        insert_history_records(self.model, history_objs)
-        return pk if len(objs) == 1 else None
-    else:
+    tt_needed = hasattr(self.model, '_tt_model')
+    if not tt_needed:
         return old__insert(self, objs, fields, return_id, raw, using)
+
+    # Must not allow multiple objs in _insert, or else we have no way to
+    # retrieve the pk of newly inserted rows
+    # TODO: Warning
+    history_objs = []
+    for obj in objs:
+        pk = old__insert(self, [obj], fields, return_id=True,
+                         raw=raw, using=using)
+        ts = get_transaction_start_ts()
+        ho = create_history_record(self.model, obj, ts, pk=pk, op='I')
+        history_objs.append(ho)
+    insert_history_records(self.model, history_objs)
+    return pk if len(objs) == 1 else None
 
 
 _insert.alters_data = True
@@ -50,7 +51,6 @@ def _update(self, values):
         raise TimeTravelDBModException()
 
     tt_needed = hasattr(self.model, '_tt_model')
-
     if not tt_needed:
         return old__update(self, values)
 
@@ -84,7 +84,6 @@ def update(self, **kwargs):
         raise TimeTravelDBModException()
 
     tt_needed = hasattr(self.model, '_tt_model')
-
     if not tt_needed:
         return old_update(self, **kwargs)
 
@@ -124,11 +123,13 @@ def delete(self):
 
     for qs in self.fast_deletes:
         pks = list(qs.values_list('pk', flat=True))
-        close_active_records(qs.model, pks, ts)
+        if hasattr(qs.model, '_tt_model'):
+            close_active_records(qs.model, pks, ts)
 
     for model, objs in six.iteritems(self.data):
         pks = [o.pk for o in objs]
-        close_active_records(model, pks, ts)
+        if hasattr(model, '_tt_model'):
+            close_active_records(model, pks, ts)
 
     old_delete(self)
 
@@ -136,10 +137,11 @@ def delete(self):
         sets = instances_for_fieldvalues.values()
         objs = set.union(*sets)
         pks = [o.pk for o in objs]
-        close_active_records(model, pks, ts)
-        history_objs = [create_history_record(model, o, ts, op='U')
-                        for o in objs]
-        insert_history_records(model, history_objs)
+        if hasattr(model, '_tt_model'):
+            close_active_records(model, pks, ts)
+            history_objs = [create_history_record(model, o, ts, op='U')
+                            for o in objs]
+            insert_history_records(model, history_objs)
 
 
 def patch_tracking():

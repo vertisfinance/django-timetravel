@@ -5,7 +5,7 @@ import pytest
 
 DJANGO_PROJECT = 'test_projects/trading_system'
 DJANGO_SETTINGS_MODULE = 'trading_system.settings'
-DB_KEEP = True
+DB_KEEP = False
 pytestmark = pytest.mark.usefixtures('setup_test_environment')
 
 
@@ -153,3 +153,22 @@ class TestCreation:
 
         with pytest.raises(TimeTravelModelError):
             p.name
+
+    def test_proxy(self, timestamps):
+        from client.models import ClientProxy
+        from django_timetravel import timetravel
+
+        client_a = ClientProxy.objects.get(name='Corp A')
+
+        timestamps.set('before_mod_client_a')
+
+        client_a.classification = 'A'
+        client_a.save()
+
+        timestamps.set('after_mod_client_a')
+
+        with timetravel(timestamps.get('before_mod_client_a')):
+            assert len(ClientProxy.objects.filter(classification='B')) == 2
+
+        with timetravel(timestamps.get('after_mod_client_a')):
+            assert len(ClientProxy.objects.filter(classification='B')) == 1

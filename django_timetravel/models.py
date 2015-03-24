@@ -31,8 +31,13 @@ def get_migration_app():
 
 
 def process_models(sender, **kwargs):
+    if hasattr(sender, '_tt_is_timetravel_model'):
+        return False
+
     do_patch()
 
+    # All known models so far:
+    known_models = {}
     all_models = apps.all_models
     for app_label in all_models:
         if app_label not in installed_app_labels:
@@ -41,22 +46,42 @@ def process_models(sender, **kwargs):
         for model_name in app_models:
             entry = '%s.%s' % (app_label, model_name)
             model = app_models[model_name]
-
-            if entry not in seen_models and all_relations_ready(model):
-                seen_models.add(entry)
-                create_timetravel_model(model)
+            known_models[entry] = model
 
     app_label = sender._meta.app_label
     model_name = sender._meta.model_name
     entry = '%s.%s' % (app_label, model_name)
 
     if app_label in installed_app_labels:
-        if entry not in seen_models and all_relations_ready(sender):
+        known_models[entry] = sender
+
+    while True:
+        created = False
+
+        for entry, model in known_models.items():
+            if entry in seen_models:
+                continue
+            if model._meta.swapped:
+                continue
+            if hasattr(model, '_tt_is_timetravel_model'):
+                continue
+            if model.__module__ == '__fake__':
+                continue
+            if not all_relations_ready(model):
+                continue
+
             seen_models.add(entry)
-            create_timetravel_model(sender)
+            create_timetravel_model(model)
+            created = True
+
+        if not created:
+            break
 
 
 def all_relations_ready(model):
+    if model._meta.proxy:
+        if not hasattr(model._meta.concrete_model, '_tt_model'):
+            return False
     for field in model._meta.local_fields:
         if field.rel:
             if not hasattr(field.rel.to, '_meta'):
@@ -75,8 +100,10 @@ def create_timetravel_model(for_model):
     Returns the newly created timetravel model class for the
     model given.
     """
-    if any([hasattr(for_model, '_tt_is_timetravel_model'),
-            for_model.__module__ == '__fake__']):
+    if for_model._meta.proxy:
+        _tt_model = for_model._meta.concrete_model._tt_model
+        for_model._tt_model = _tt_model
+        for_model._meta._tt_model = _tt_model
         return
 
     opt = for_model._meta
@@ -86,6 +113,7 @@ def create_timetravel_model(for_model):
         app_label = get_migration_app()
         db_table = name
         index_together = [[OK, VU]]
+        verbose_name = name[:39]
 
     attrs = {'Meta': Meta,
              '_tt_is_timetravel_model': True,
@@ -98,6 +126,7 @@ def create_timetravel_model(for_model):
     ret = type(str(name), (Model,), attrs)
     for_model._tt_model = ret
     for_model._meta._tt_model = ret
+
     return ret
 
 

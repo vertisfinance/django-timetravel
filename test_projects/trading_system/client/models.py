@@ -31,3 +31,11 @@ class B(models.Model):
 
 class AB(A, B):
     pass
+
+
+class ClientProxy(Client):
+    class Meta:
+        proxy = True
+
+    def can_trade(self):
+        return True
