@@ -244,4 +244,3 @@ def do_patch():
 
 signals.class_prepared.connect(process_models, dispatch_uid='any')
 process_models(None)
-
