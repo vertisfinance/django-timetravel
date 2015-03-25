@@ -5,6 +5,8 @@ class Client(models.Model):
     name = models.CharField(max_length=100)
     signed_contracts = models.ManyToManyField('Contract')
     classification = models.CharField(max_length=1, default='A')
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return self.name

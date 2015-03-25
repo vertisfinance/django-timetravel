@@ -225,6 +225,8 @@ def copy_fields(model):
         _field.unique_for_date = False if _field.unique_for_date else None
         _field.unique_for_month = False if _field.unique_for_month else None
         _field.unique_for_year = False if _field.unique_for_year else None
+        _field.auto_now = False
+        _field.auto_now_add = False
 
         _field.auto_created = False
 

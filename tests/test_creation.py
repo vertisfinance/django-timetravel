@@ -5,7 +5,7 @@ import pytest
 
 DJANGO_PROJECT = 'test_projects/trading_system'
 DJANGO_SETTINGS_MODULE = 'trading_system.settings'
-DB_KEEP = False
+DB_KEEP = True
 pytestmark = pytest.mark.usefixtures('setup_test_environment')
 
 
@@ -192,3 +192,10 @@ class TestCreation:
 
         with timetravel(timestamps.get('after_mod_client_a')):
             assert len(ClientProxy.objects.filter(classification='B')) == 1
+
+    def test_auto_now_ok(self):
+        from client.models import Client
+
+        created_at = Client.objects.get(name='Corp A').created_at
+        same = Client._meta._tt_model.objects.filter(created_at=created_at)
+        assert len(same) == 3

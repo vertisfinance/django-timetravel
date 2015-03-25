@@ -26,6 +26,10 @@ Q = decimal.Decimal('.000001')
 
 
 class TimeTravelModelError(Exception):
+    """
+    Error thrown when model instance is accessed outside of
+    it's timetravel context.
+    """
     def __init__(self, obj):
         actual_ctx = get_tt_ts()
         model_ctx = obj._tt_ts
@@ -36,6 +40,10 @@ class TimeTravelModelError(Exception):
 
 
 class TimeTravelQuerySetError(Exception):
+    """
+    Error thrown when a queryset is accessed outside of
+    it's timetravel context.
+    """
     def __init__(self, obj):
         actual_ctx = get_tt_ts()
         qs_ctx = obj._tt_ts
@@ -46,12 +54,16 @@ class TimeTravelQuerySetError(Exception):
 
 
 class TimeTravelDBModException(Exception):
+    """
+    Error thrown when save, update or delete is called in timetravel context.
+    """
     def __init__(self):
         message = 'Saving or deleting in timetravel context is forbidden'
         super(TimeTravelDBModException, self).__init__(message)
 
 
 def to_decimal(f):
+    """Converts a float to decimal with precision given in global Q."""
     return decimal.Decimal(f).quantize(Q)
 
 
